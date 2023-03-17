@@ -4,14 +4,14 @@ use tyght_map::*;
 
 fn insert_string<S>(map: TyghtMap<S>) -> TyghtMap<S::Output>
 where
-    S: Insert<String>,
+    S: Missing<String>,
 {
     map.insert("Hello".to_string())
 }
 
 fn print_string<S>(map: &TyghtMap<S>)
 where
-    S: Get<String>,
+    S: Contains<String>,
 {
     let string: &String = map.get();
     println!("{string}");

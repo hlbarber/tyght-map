@@ -13,7 +13,7 @@
 //! The map, [`TyghtMap`], enjoys the following properties:
 //!
 //! - The size of the map will match the size of its items.
-//! - No heap allocations are required, this crate is `!#[no_std]`.
+//! - No heap allocations, this crate is `!#[no_std]`.
 //! - All methods on the map are infallible.
 //!
 //! # Example
@@ -45,32 +45,30 @@
 //!
 //! For each operation on [`TyghtMap`] there is an associated trait:
 //!
-//! - [`Get<T>`](Get) allows [`get`](TyghtMap::get) when there is an item of type `T` present
-//! - [`Insert<T>`](Insert) allows [`insert`](TyghtMap::insert) when there is no item of type `T` present
-//! - [`Remove<T>`](Remove) allows [`remove`](TyghtMap::remove) when there is an item of type `T` present
+//! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing [`get`](TyghtMap::get) and [`remove`](TyghtMap::remove)
+//! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T` allowing [`insert`](TyghtMap::insert)
 //!
-//! The presence of an implementation corresponds to the ability to call the corresponding method. This means that
-//! placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the items it contains.
+//! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the items it contains.
 //!
-//! For example, the following function _cannot_ be called using a map which does not include a `String` and a `u32`.
+//! For example, the following function _cannot_ be called using a map which does not contain a `String` and a `u32`.
 //!
 //! ```
 //! # use tyght_map::*;
 //! fn print_string<S>(map: &TyghtMap<S>)
 //! where
-//!     S: Get<String>,
-//!     S: Get<u32>
+//!     S: Contains<String>,
+//!     S: Contains<u32>
 //! {
 //!     let string: &String = map.get();
 //!     let int: &u32 = map.get();
 //!     println!("{string} {int}");
 //! }
 //! ```
-//! 
+//!
 //! # Known Limitations
-//! 
+//!
 //! Currently, the map can only store 32 items. This limit can be raised if compile-times are known to be reasonable.
-//! 
+//!
 //! Future improvements to `rustc`s type system may remove the need for a limit all together.
 //!
 //! # Nightly
@@ -91,9 +89,18 @@ mod insert;
 mod macros;
 mod remove;
 
-pub use get::Get;
-pub use insert::Insert;
-pub use remove::Remove;
+use get::Get;
+use insert::Insert;
+use remove::Remove;
+
+/// A trait marking whether `T` is present.
+pub trait Contains<T>: Get<T> + Remove<T> {}
+
+/// A trait marking whether `T` is absent.
+pub trait Missing<T>: Insert<T> {}
+
+impl<T, S> Contains<T> for S where S: Get<T> + Remove<T> {}
+impl<T, S> Missing<T> for S where S: Insert<T> {}
 
 /// A static type map.
 ///
@@ -121,7 +128,7 @@ impl<S> TyghtMap<S> {
     #[must_use]
     pub fn insert<T>(self, item: T) -> TyghtMap<S::Output>
     where
-        S: Insert<T>,
+        S: Missing<T>,
     {
         TyghtMap(self.0.insert(item))
     }
@@ -129,7 +136,7 @@ impl<S> TyghtMap<S> {
     /// Retrieves an item.
     pub fn get<T>(&self) -> &T
     where
-        S: Get<T>,
+        S: Contains<T>,
     {
         self.0.get()
     }
@@ -137,7 +144,7 @@ impl<S> TyghtMap<S> {
     /// Retrieves an item mutably.
     pub fn get_mut<T>(&mut self) -> &mut T
     where
-        S: Get<T>,
+        S: Contains<T>,
     {
         self.0.get_mut()
     }
@@ -148,7 +155,7 @@ impl<S> TyghtMap<S> {
     #[must_use]
     pub fn remove<T>(self) -> (T, TyghtMap<S::Output>)
     where
-        S: Remove<T>,
+        S: Contains<T>,
     {
         let (item, map) = self.0.remove();
         (item, TyghtMap(map))

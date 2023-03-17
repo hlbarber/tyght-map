@@ -4,7 +4,7 @@ use crate::get::GetIndex;
 pub trait Prepend<T> {
     type Prepended;
 
-    /// Appends an item to a static container.
+    /// Prepends an item to a static container.
     fn prepend(self, item: T) -> Self::Prepended;
 }
 
@@ -23,7 +23,7 @@ macro_rules! impl_prepend {
     )
 }
 
-// `Append` is implemented on tuples.
+// `Prepend` is implemented on tuples.
 crate::macros::impl_all!(impl_prepend);
 
 /// Allows for the insertion of a unique type into a static container.

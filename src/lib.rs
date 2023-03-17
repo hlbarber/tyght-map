@@ -161,3 +161,25 @@ impl<S> TyghtMap<S> {
         (item, TyghtMap(map))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static_assertions::assert_impl_all!(
+        (u32, f32, f64): Contains<u32>,
+        Contains<f32>,
+        Contains<f64>,
+        Missing<&'static str>,
+        Missing<i32>,
+        Missing<u8>
+    );
+    static_assertions::assert_not_impl_any!(
+        (u32, f32, f64): Missing<u32>,
+        Missing<f32>,
+        Missing<f64>,
+        Contains<&'static str>,
+        Contains<i32>,
+        Contains<u8>
+    );
+}

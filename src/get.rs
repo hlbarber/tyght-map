@@ -33,6 +33,8 @@ macro_rules! impl_into_type_ids {
 crate::macros::impl_all!(impl_into_type_ids);
 
 /// Finds the index of the first element in `S` to match type `T`. Failures return [`usize::MAX`].
+///
+/// This means that, the absence of `T` in `S` can be inferred from `find_index() == `usize::MAX`.
 const fn find_index<T, S>() -> usize
 where
     T: 'static,
@@ -145,7 +147,7 @@ mod tests {
         Get<i32>,
         Get<f32>
     );
-    static_assertions::assert_impl_any!(
+    static_assertions::assert_impl_all!(
         (u32, u64, &'static str, f32): Get<u32>,
         Get<u64>,
         Get<&'static str>,

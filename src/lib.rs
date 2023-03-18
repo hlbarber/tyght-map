@@ -85,6 +85,7 @@
 //!
 
 mod get;
+mod indexable;
 mod insert;
 mod macros;
 mod remove;

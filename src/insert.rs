@@ -1,4 +1,4 @@
-use crate::get::GetIndex;
+use crate::indexable::FindIndex;
 
 /// A useful interface used to extend static containers.
 pub trait Prepend<T> {
@@ -39,8 +39,7 @@ pub trait Insert<T> {
 
 impl<T, S> Insert<T> for S
 where
-    T: 'static,
-    S: GetIndex<T, INDEX = { usize::MAX }>,
+    S: FindIndex<T, INDEX = { usize::MAX }>,
     S: Prepend<T>,
 {
     type Output = S::Prepended;

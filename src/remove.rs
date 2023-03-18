@@ -1,38 +1,4 @@
-use crate::get::{GetByIndex, GetIndex};
-
-/// An interface for removing a value from a static container by `INDEX`.
-pub trait RemoveByIndex<const INDEX: usize>: GetByIndex<INDEX> {
-    type Removed;
-
-    /// Removes a value by index.
-    fn remove_by_index(self) -> (Self::Item, Self::Removed);
-}
-
-macro_rules! remove_by_index {
-    (@step $_idx:expr, $($_head:ident,)* ; ) => {};
-
-    (@step $idx:expr, $($head:ident,)* ; $current:ident, $($tail:ident,)*) => {
-        impl<$($head,)* $current, $($tail,)*> RemoveByIndex<{ $idx }> for ($($head,)* $current, $($tail,)*)
-        {
-            type Removed = ($($head,)* $($tail,)*);
-
-            #[allow(non_snake_case)]
-            fn remove_by_index(self) -> (Self::Item, Self::Removed) {
-                let ($($head,)* current, $($tail,)*) = self;
-                (current, ($($head,)* $($tail,)*))
-            }
-        }
-
-        remove_by_index!(@step $idx + 1usize, $($head,)* $current, ; $($tail,)* );
-    };
-
-    ($($var:ident),*) => {
-        remove_by_index!(@step 0usize, ; $($var,)*);
-    }
-}
-
-// `RemoveByIndex` is implemented on tuples.
-crate::macros::impl_all!(remove_by_index);
+use crate::indexable::{FindIndex, Indexable};
 
 /// Allows for the removal of a unique type from a static container.
 ///
@@ -47,9 +13,8 @@ pub trait Remove<T> {
 
 impl<T, S> Remove<T> for S
 where
-    T: 'static,
-    S: GetIndex<T>,
-    S: RemoveByIndex<{ S::INDEX }, Item = T>,
+    S: FindIndex<T>,
+    S: Indexable<{ S::INDEX }, Item = T>,
 {
     type Output = S::Removed;
 

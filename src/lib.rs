@@ -134,6 +134,15 @@ impl<S> TyghtMap<S> {
         TyghtMap(self.0.insert(item))
     }
 
+    /// Replaces an item.
+    pub fn replace<T>(&mut self, item: T) -> T
+    where
+        S: Contains<T>
+    {
+        let old = core::mem::replace(self.get_mut(), item);
+        old
+    }
+
     /// Retrieves an item.
     pub fn get<T>(&self) -> &T
     where

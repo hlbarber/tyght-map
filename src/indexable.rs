@@ -55,7 +55,7 @@ where
 }
 
 /// A useful interface for providing the `INDEX` of a type `T`, given by [`find_index`], within a static container.
-pub(crate) trait FindIndex<T> {
+pub trait FindIndex<T> {
     const INDEX: usize;
 }
 
@@ -68,19 +68,26 @@ where
     const INDEX: usize = find_index::<T, S>();
 }
 
-/// An interface for performing actions on a value in a static container by `INDEX`.
+/// An interface for performing actions on an element of a static container by `INDEX`.
 pub trait Indexable<const INDEX: usize> {
     type Item;
     type Removed;
 
-    /// Retrieves a value by index.
+    /// Returns a reference to the value corresponding to the index.
     fn get_by_index(&self) -> &Self::Item;
 
-    /// Retrieves a mutable value by index.
+    /// Returns a mutable reference to the value corresponding to the index.
     fn get_by_index_mut(&mut self) -> &mut Self::Item;
 
-    /// Removes a value by index.
+    /// Removes a type from the map, returning its value.
     fn remove_by_index(self) -> (Self::Item, Self::Removed);
+}
+
+pub trait MaybeIndexable<const INDEX: usize> {
+    type Inserted<T>;
+
+    /// Inserts a value into the map.
+    fn insert_by_index<T>(self, item: T) -> Self::Inserted<T>;
 }
 
 macro_rules! indexable {
@@ -109,6 +116,18 @@ macro_rules! indexable {
                 let ($($head,)* current, $($tail,)*) = self;
                 (current, ($($head,)* $($tail,)*))
             }
+
+        }
+
+        impl<$($head,)* $current, $($tail,)*> MaybeIndexable<{ $idx }> for ($($head,)* $current, $($tail,)*)
+        {
+            type Inserted<T> = ($($head,)* T, $($tail,)*);
+
+            #[allow(non_snake_case)]
+            fn insert_by_index<T>(self, item: T) -> Self::Inserted<T> {
+                let ($($head,)* _current, $($tail,)*) = self;
+                ($($head,)* item, $($tail,)*)
+            }
         }
 
         indexable!(@step $idx + 1usize, $($head,)* $current, ; $($tail,)* );
@@ -116,6 +135,16 @@ macro_rules! indexable {
 
     ($($var:ident),*) => {
         indexable!(@step 0usize, ; $($var,)*);
+
+        impl<$($var,)*> MaybeIndexable<{ usize::MAX }> for ($($var,)*) {
+            type Inserted<T> = (T, $($var,)*);
+
+            #[allow(non_snake_case)]
+            fn insert_by_index<T>(self, item: T) -> Self::Inserted<T> {
+                let ($($var,)*) = self;
+                (item, $($var,)*)
+            }
+        }
     }
 }
 

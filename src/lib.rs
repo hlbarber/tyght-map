@@ -91,17 +91,22 @@ mod macros;
 mod remove;
 
 use get::Get;
+use indexable::FindIndex;
 use insert::Insert;
 use remove::Remove;
 
 /// A trait marking whether `T` is present.
-pub trait Contains<T>: Get<T> + Remove<T> {}
+pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
+
+/// A trait marking whether `T` is maybe present.
+pub trait MaybeContains<T>: Insert<T> {}
 
 /// A trait marking whether `T` is absent.
-pub trait Missing<T>: Insert<T> {}
+pub trait Missing<T>: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
 
-impl<T, S> Contains<T> for S where S: Get<T> + Remove<T> {}
-impl<T, S> Missing<T> for S where S: Insert<T> {}
+impl<T, S> Contains<T> for S where S: MaybeContains<T> + Get<T> + Remove<T> {}
+impl<T, S> MaybeContains<T> for S where S: Insert<T> {}
+impl<T, S> Missing<T> for S where S: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
 
 /// A static type map.
 ///
@@ -123,27 +128,27 @@ impl TyghtMap<()> {
 }
 
 impl<S> TyghtMap<S> {
-    /// Inserts an item.
+    /// Inserts a value.
     ///
     /// This consumes then returns the map.
     #[must_use]
     pub fn insert<T>(self, item: T) -> TyghtMap<S::Output>
     where
-        S: Missing<T>,
+        S: MaybeContains<T>,
     {
         TyghtMap(self.0.insert(item))
     }
 
-    /// Replaces an item.
+    /// Replaces an value with corresponding type.
     pub fn replace<T>(&mut self, item: T) -> T
     where
-        S: Contains<T>
+        S: Contains<T>,
     {
         let old = core::mem::replace(self.get_mut(), item);
         old
     }
 
-    /// Retrieves an item.
+    /// Returns a reference to the value with corresponding type.
     pub fn get<T>(&self) -> &T
     where
         S: Contains<T>,
@@ -151,7 +156,7 @@ impl<S> TyghtMap<S> {
         self.0.get()
     }
 
-    /// Retrieves an item mutably.
+    /// Returns a mutable reference to the value with corresponding type.
     pub fn get_mut<T>(&mut self) -> &mut T
     where
         S: Contains<T>,
@@ -159,11 +164,11 @@ impl<S> TyghtMap<S> {
         self.0.get_mut()
     }
 
-    /// Removes an item.
+    /// Removes a value with corresponding type.
     ///
     /// This consumes the map and returns an `(item, map)` pair.
     #[must_use]
-    pub fn remove<T>(self) -> (T, TyghtMap<S::Output>)
+    pub fn remove<T>(self) -> (T, TyghtMap<<S as Remove<T>>::Output>)
     where
         S: Contains<T>,
     {

@@ -4,10 +4,10 @@ use crate::indexable::{FindIndex, Indexable};
 ///
 /// This is implemented for every tuple containing an element of type `T`.
 pub trait Get<T> {
-    /// Retrieves an item with a unique type from a static container.
+    /// Returns a reference to the value with corresponding type.
     fn get(&self) -> &T;
 
-    /// Retrieves a mutable item with a unique type from a static container.
+    /// Returns a mutable reference to the value with corresponding type.
     fn get_mut(&mut self) -> &mut T;
 }
 

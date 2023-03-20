@@ -2,12 +2,12 @@ use crate::indexable::{FindIndex, Indexable};
 
 /// Allows for the removal of a unique type from a static container.
 ///
-/// This is implemented for every tuple _not_ containing an element of type `T`.
+/// This is implemented for every tuple containing an element of type `T`.
 pub trait Remove<T> {
     /// The container type post-removal.
     type Output;
 
-    /// Removes an item with a unique type from a static container.
+    /// Removes a type from the map, returning the value.
     fn remove(self) -> (T, Self::Output);
 }
 

@@ -4,7 +4,7 @@ use tyght_map::*;
 
 fn insert_string<S>(map: TyghtMap<S>) -> TyghtMap<S::Output>
 where
-    S: Missing<String>,
+    S: MaybeContains<String>,
 {
     map.insert("Hello".to_string())
 }
@@ -25,6 +25,11 @@ fn main() {
     // Retrieve the `u32` from the map
     let item: &u32 = map.get();
     assert_eq!(*item, 3);
+
+    // Inserting twice replaces the current value
+    let map = map.insert(5u32);
+    assert_eq!(std::mem::size_of_val(&map), 12);
+    assert_eq!(5u32, *map.get());
 
     // Insert a string and then print it using generic methods
     let mut map = insert_string(map);

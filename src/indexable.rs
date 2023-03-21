@@ -1,4 +1,4 @@
-use core::any::TypeId;
+use core::{any::TypeId, convert::Infallible};
 
 /// An interface for converting static containers into [`TypeIds`].
 #[const_trait]
@@ -83,11 +83,59 @@ pub trait Indexable<const INDEX: usize> {
     fn remove_by_index(self) -> (Self::Item, Self::Removed);
 }
 
+/// A utility trait converting from a `&{mut}Source` to `&{mut}T`.
+pub trait Map<T> {
+    type Source;
+
+    fn map(source: &Self::Source) -> &T;
+    fn map_mut(source: &mut Self::Source) -> &mut T;
+}
+
+/// Maps `&{mut} T` to `&{mut} T`.
+#[derive(Debug)]
+pub struct IdentityMap;
+
+impl<T> Map<T> for IdentityMap {
+    type Source = T;
+
+    fn map(source: &Self::Source) -> &T {
+        source
+    }
+
+    fn map_mut(source: &mut Self::Source) -> &mut T {
+        source
+    }
+}
+
+/// Maps `&{mut} !` to `&{mut} T`.
+#[derive(Debug)]
+pub struct InfallibleMap;
+
+impl<T> Map<T> for InfallibleMap {
+    type Source = Infallible;
+
+    fn map(source: &Self::Source) -> &T {
+        match *source {}
+    }
+
+    fn map_mut(source: &mut Self::Source) -> &mut T {
+        match *source {}
+    }
+}
+
 pub trait MaybeIndexable<const INDEX: usize> {
+    type Item;
+    type ItemMap;
     type Inserted<T>;
 
     /// Inserts a value into the map.
     fn insert_by_index<T>(self, item: T) -> Self::Inserted<T>;
+
+    /// Tries to return a reference to the value corresponding to the index.
+    fn try_get_by_index(&self) -> Option<&Self::Item>;
+
+    /// Tries to return a mutable reference to the value corresponding to the index.
+    fn try_get_by_index_mut(&mut self) -> Option<&mut Self::Item>;
 }
 
 macro_rules! indexable {
@@ -121,12 +169,28 @@ macro_rules! indexable {
 
         impl<$($head,)* $current, $($tail,)*> MaybeIndexable<{ $idx }> for ($($head,)* $current, $($tail,)*)
         {
+            type Item = $current;
+            type ItemMap = IdentityMap;
             type Inserted<T> = ($($head,)* T, $($tail,)*);
 
             #[allow(non_snake_case)]
             fn insert_by_index<T>(self, item: T) -> Self::Inserted<T> {
                 let ($($head,)* _current, $($tail,)*) = self;
                 ($($head,)* item, $($tail,)*)
+            }
+
+            #[allow(unused_variables, non_snake_case)]
+            fn try_get_by_index(&self) -> Option<&Self::Item>
+            {
+                let ($($head,)* current, $($tail,)*) = self;
+                Some(current)
+            }
+
+            #[allow(unused_variables, non_snake_case)]
+            fn try_get_by_index_mut(&mut self) -> Option<&mut Self::Item>
+            {
+                let ($($head,)* current, $($tail,)*) = self;
+                Some(current)
             }
         }
 
@@ -136,13 +200,28 @@ macro_rules! indexable {
     ($($var:ident),*) => {
         indexable!(@step 0usize, ; $($var,)*);
 
-        impl<$($var,)*> MaybeIndexable<{ usize::MAX }> for ($($var,)*) {
+        impl<$($var,)*> MaybeIndexable<{ usize::MAX }> for ($($var,)*)
+        {
+            type Item = Infallible;
+            type ItemMap = InfallibleMap;
             type Inserted<T> = (T, $($var,)*);
 
             #[allow(non_snake_case)]
             fn insert_by_index<T>(self, item: T) -> Self::Inserted<T> {
                 let ($($var,)*) = self;
                 (item, $($var,)*)
+            }
+
+            #[allow(unused_variables, non_snake_case)]
+            fn try_get_by_index(&self) -> Option<&Self::Item>
+            {
+                None
+            }
+
+            #[allow(unused_variables, non_snake_case)]
+            fn try_get_by_index_mut(&mut self) -> Option<&mut Self::Item>
+            {
+                None
             }
         }
     }

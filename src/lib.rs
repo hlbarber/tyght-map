@@ -35,6 +35,10 @@
 //! // Insert a `String` into the map, then mutate it
 //! let mut map = map.insert("Hello".to_string());
 //! *map.get_mut::<String>() += ", world!";
+//! 
+//! // Try to get a `u8` from the map
+//! let item = map.try_get::<u8>();
+//! assert_eq!(item, None);
 //!
 //! // Remove the `String` from the map
 //! let (item, _map) = map.remove::<String>();
@@ -46,7 +50,7 @@
 //! There are three important marker traits:
 //!
 //! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing [`get`](TyghtMap::get) and [`remove`](TyghtMap::remove)
-//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing [`insert`](TyghtMap::insert)
+//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing [`insert`](TyghtMap::insert) and [`try_get`](TyghtMap::try_get)
 //! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T`
 //!
 //! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
@@ -90,23 +94,25 @@ mod indexable;
 mod insert;
 mod macros;
 mod remove;
+mod try_get;
 
 use get::Get;
 use indexable::FindIndex;
 use insert::Insert;
 use remove::Remove;
+use try_get::TryGet;
 
 /// A trait marking whether `T` is present.
 pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
 
 /// A trait marking whether `T` is maybe present.
-pub trait MaybeContains<T>: Insert<T> {}
+pub trait MaybeContains<T>: Insert<T> + TryGet<T> {}
 
 /// A trait marking whether `T` is absent.
 pub trait Missing<T>: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
 
 impl<T, S> Contains<T> for S where S: MaybeContains<T> + Get<T> + Remove<T> {}
-impl<T, S> MaybeContains<T> for S where S: Insert<T> {}
+impl<T, S> MaybeContains<T> for S where S: Insert<T> + TryGet<T> {}
 impl<T, S> Missing<T> for S where S: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
 
 /// A static type map.
@@ -163,6 +169,22 @@ impl<S> TyghtMap<S> {
         S: Contains<T>,
     {
         self.0.get_mut()
+    }
+
+    /// Tries to return a reference to the value with corresponding type.
+    pub fn try_get_mut<T>(&mut self) -> Option<&mut T>
+    where
+        S: MaybeContains<T>,
+    {
+        self.0.try_get_mut()
+    }
+
+    /// Tries to return a reference to the value with corresponding type.
+    pub fn try_get<T>(&self) -> Option<&T>
+    where
+        S: MaybeContains<T>,
+    {
+        self.0.try_get()
     }
 
     /// Removes a value with corresponding type.

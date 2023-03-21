@@ -43,12 +43,13 @@
 //!
 //! # Traits
 //!
-//! For each operation on [`TyghtMap`] there is an associated trait:
+//! There are three important marker traits:
 //!
 //! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing [`get`](TyghtMap::get) and [`remove`](TyghtMap::remove)
-//! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T` allowing [`insert`](TyghtMap::insert)
+//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing [`insert`](TyghtMap::insert)
+//! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T`
 //!
-//! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the items it contains.
+//! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
 //!
 //! For example, the following function _cannot_ be called using a map which does not contain a `String` and a `u32`.
 //!

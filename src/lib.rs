@@ -9,6 +9,8 @@
 #![no_std]
 
 //! The `tyght-map` crate provides a static type map implementation.
+//! 
+//! A type map is a map where the values are indexed by their types.
 //!
 //! The map, [`TyghtMap`], enjoys the following properties:
 //!
@@ -47,15 +49,18 @@
 //! ```
 //!
 //! # Traits
+//! 
+//! Placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
 //!
 //! There are three important marker traits:
 //!
 //! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing:
-//!     - [`replace](TyghtMap::replace)
+//!     - [`replace`](TyghtMap::replace)
 //!     - [`get`](TyghtMap::get)
 //!     - [`get_mut`](TyghtMap::get_mut)
 //!     - [`remove`](TyghtMap::remove)
-//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing:
+//! - [`MaybeContains<T>`](MaybeContains) is always([`*`](#known-limitations)) implemented on `S`
+//! allowing:
 //!     - [`try_insert`](TyghtMap::try_insert)
 //!     - [`try_get`](TyghtMap::try_get)
 //!     - [`try_get_mut`](TyghtMap::try_get_mut)
@@ -63,9 +68,7 @@
 //! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T` allowing:
 //!     - [`insert`](TyghtMap::insert)
 //!
-//! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
-//!
-//! For example, the following function _cannot_ be called using a map which does not contain a `String` and a `u32`.
+//! The following function _cannot_ be called using a map which does not contain a `String` and a `u32`.
 //!
 //! ```
 //! # use tyght_map::*;
@@ -142,7 +145,7 @@ impl TyghtMap<()> {
 }
 
 impl<S> TyghtMap<S> {
-    /// Replaces a value with corresponding type.
+    /// Replaces a value.
     pub fn replace<T>(&mut self, item: T) -> T
     where
         S: Contains<T>,
@@ -151,8 +154,8 @@ impl<S> TyghtMap<S> {
         old
     }
 
-    /// Tries to insert a value. If an existing value with the same type already exists then replace a value and the
-    /// return existing value.
+    /// Tries to insert a value. If an existing value, with the same type, already exists then replace
+    /// then return it.
     ///
     /// This consumes the map then returns an `(item, map)` pair.
     pub fn try_insert<T>(self, item: T) -> (Option<T>, TyghtMap<S::InsertOutput>)
@@ -174,7 +177,7 @@ impl<S> TyghtMap<S> {
         TyghtMap(self.0.insert(item))
     }
 
-    /// Returns a reference to the value with corresponding type.
+    /// Returns a reference to a value with a given type.
     pub fn get<T>(&self) -> &T
     where
         S: Contains<T>,
@@ -182,7 +185,7 @@ impl<S> TyghtMap<S> {
         self.0.get()
     }
 
-    /// Tries to return a reference to the value with corresponding type.
+    /// Tries to return a reference to a value with a given type.
     pub fn try_get<T>(&self) -> Option<&T>
     where
         S: MaybeContains<T>,
@@ -190,7 +193,7 @@ impl<S> TyghtMap<S> {
         self.0.try_get()
     }
 
-    /// Returns a mutable reference to the value with corresponding type.
+    /// Returns a mutable reference to a value with a given type.
     pub fn get_mut<T>(&mut self) -> &mut T
     where
         S: Contains<T>,
@@ -198,7 +201,7 @@ impl<S> TyghtMap<S> {
         self.0.get_mut()
     }
 
-    /// Tries to return a reference to the value with corresponding type.
+    /// Tries to return a reference to a value with a given type.
     pub fn try_get_mut<T>(&mut self) -> Option<&mut T>
     where
         S: MaybeContains<T>,
@@ -206,7 +209,7 @@ impl<S> TyghtMap<S> {
         self.0.try_get_mut()
     }
 
-    /// Removes a value with corresponding type.
+    /// Removes a value with a given type.
     ///
     /// This consumes the map and returns an `(item, map)` pair.
     #[must_use]
@@ -218,7 +221,7 @@ impl<S> TyghtMap<S> {
         (item, TyghtMap(map))
     }
 
-    /// Tries to remove a value with corresponding type.
+    /// Tries to remove a value with a given type.
     ///
     /// This consumes the map and returns an `(item, map)` pair.
     #[must_use]

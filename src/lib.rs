@@ -113,12 +113,18 @@ use insert::{Insert, TryInsert};
 use remove::{Remove, TryRemove};
 
 /// A trait marking whether `T` is present.
+/// 
+/// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
 
 /// A trait marking whether `T` is maybe present.
+/// 
+/// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait MaybeContains<T>: TryInsert<T> + TryGet<T> + TryRemove<T> {}
 
 /// A trait marking whether `T` is absent.
+/// 
+/// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait Missing<T>: MaybeContains<T> + Insert<T> {}
 
 impl<T, S> Contains<T> for S where S: MaybeContains<T> + Get<T> + Remove<T> {}
@@ -154,10 +160,11 @@ impl<S> TyghtMap<S> {
         old
     }
 
-    /// Tries to insert a value. If an existing value, with the same type, already exists then replace
-    /// then return it.
+    /// Tries to insert a value. If a value, with the same type, already exists then replace
+    /// and return it.
     ///
-    /// This consumes the map then returns an `(item, map)` pair.
+    /// This consumes the map then returns an `(optional_item, map)` pair.
+    #[must_use]
     pub fn try_insert<T>(self, item: T) -> (Option<T>, TyghtMap<S::InsertOutput>)
     where
         S: MaybeContains<T>,
@@ -223,7 +230,7 @@ impl<S> TyghtMap<S> {
 
     /// Tries to remove a value with a given type.
     ///
-    /// This consumes the map and returns an `(item, map)` pair.
+    /// This consumes the map and returns an `(optional_item, map)` pair.
     #[must_use]
     pub fn try_remove<T>(self) -> (Option<T>, TyghtMap<S::RemoveOutput>)
     where

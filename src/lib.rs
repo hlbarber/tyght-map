@@ -5,7 +5,7 @@
     associated_const_equality
 )]
 #![allow(incomplete_features)]
-#![deny(missing_debug_implementations, missing_docs)]
+#![deny(missing_debug_implementations, missing_docs, unsafe_code)]
 #![no_std]
 
 //! The `tyght-map` crate provides a static type map implementation.
@@ -14,7 +14,8 @@
 //!
 //! - The size of the map will match the size of its items.
 //! - No heap allocations, this crate is `!#[no_std]`.
-//! - All methods on the map are infallible.
+//! - Provides both infallible and fallible methods.
+//! - No unsafe.
 //!
 //! # Example
 //!
@@ -33,9 +34,9 @@
 //! assert_eq!(*item, 3);
 //!
 //! // Insert a `String` into the map, then mutate it
-//! let mut map = map.insert("Hello".to_string());
+//! let mut map = map.insert("Hey".to_string());
 //! *map.get_mut::<String>() += ", world!";
-//! 
+//!
 //! // Try to get a `u8` from the map
 //! let item = map.try_get::<u8>();
 //! assert_eq!(item, None);
@@ -49,9 +50,18 @@
 //!
 //! There are three important marker traits:
 //!
-//! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing [`get`](TyghtMap::get) and [`remove`](TyghtMap::remove)
-//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing [`insert`](TyghtMap::insert) and [`try_get`](TyghtMap::try_get)
-//! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T`
+//! - [`Contains<T>`](Contains) is implemented on `S` when it contains `T` allowing:
+//!     - [`replace](TyghtMap::replace)
+//!     - [`get`](TyghtMap::get)
+//!     - [`get_mut`](TyghtMap::get_mut)
+//!     - [`remove`](TyghtMap::remove)
+//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S` allowing:
+//!     - [`try_insert`](TyghtMap::try_insert)
+//!     - [`try_get`](TyghtMap::try_get)
+//!     - [`try_get_mut`](TyghtMap::try_get_mut)
+//!     - [`try_remove`](TyghtMap::try_remove)
+//! - [`Missing<T>`](Missing) is implemented on `S` when it doesn't contain `T` allowing:
+//!     - [`insert`](TyghtMap::insert)
 //!
 //! This means that placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
 //!
@@ -94,31 +104,28 @@ mod indexable;
 mod insert;
 mod macros;
 mod remove;
-mod try_get;
 
-use get::Get;
-use indexable::FindIndex;
-use insert::Insert;
-use remove::Remove;
-use try_get::TryGet;
+use get::{Get, TryGet};
+use insert::{Insert, TryInsert};
+use remove::{Remove, TryRemove};
 
 /// A trait marking whether `T` is present.
 pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
 
 /// A trait marking whether `T` is maybe present.
-pub trait MaybeContains<T>: Insert<T> + TryGet<T> {}
+pub trait MaybeContains<T>: TryInsert<T> + TryGet<T> + TryRemove<T> {}
 
 /// A trait marking whether `T` is absent.
-pub trait Missing<T>: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
+pub trait Missing<T>: MaybeContains<T> + Insert<T> {}
 
 impl<T, S> Contains<T> for S where S: MaybeContains<T> + Get<T> + Remove<T> {}
-impl<T, S> MaybeContains<T> for S where S: Insert<T> + TryGet<T> {}
-impl<T, S> Missing<T> for S where S: MaybeContains<T> + FindIndex<T, INDEX = { usize::MAX }> {}
+impl<T, S> MaybeContains<T> for S where S: TryInsert<T> + TryGet<T> + TryRemove<T> {}
+impl<T, S> Missing<T> for S where S: MaybeContains<T> + Insert<T> {}
 
 /// A static type map.
 ///
 /// See the [crate-level documentation](crate) for more information.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TyghtMap<S>(S);
 
 impl Default for TyghtMap<()> {
@@ -135,18 +142,7 @@ impl TyghtMap<()> {
 }
 
 impl<S> TyghtMap<S> {
-    /// Inserts a value.
-    ///
-    /// This consumes then returns the map.
-    #[must_use]
-    pub fn insert<T>(self, item: T) -> TyghtMap<S::Output>
-    where
-        S: MaybeContains<T>,
-    {
-        TyghtMap(self.0.insert(item))
-    }
-
-    /// Replaces an value with corresponding type.
+    /// Replaces a value with corresponding type.
     pub fn replace<T>(&mut self, item: T) -> T
     where
         S: Contains<T>,
@@ -155,12 +151,43 @@ impl<S> TyghtMap<S> {
         old
     }
 
+    /// Tries to insert a value. If an existing value with the same type already exists then replace a value and the
+    /// return existing value.
+    ///
+    /// This consumes the map then returns an `(item, map)` pair.
+    pub fn try_insert<T>(self, item: T) -> (Option<T>, TyghtMap<S::InsertOutput>)
+    where
+        S: MaybeContains<T>,
+    {
+        let (item, output) = self.0.try_insert(item);
+        (item, TyghtMap(output))
+    }
+
+    /// Inserts a value.
+    ///
+    /// This consumes then returns the map.
+    #[must_use]
+    pub fn insert<T>(self, item: T) -> TyghtMap<S::InsertOutput>
+    where
+        S: Missing<T>,
+    {
+        TyghtMap(self.0.insert(item))
+    }
+
     /// Returns a reference to the value with corresponding type.
     pub fn get<T>(&self) -> &T
     where
         S: Contains<T>,
     {
         self.0.get()
+    }
+
+    /// Tries to return a reference to the value with corresponding type.
+    pub fn try_get<T>(&self) -> Option<&T>
+    where
+        S: MaybeContains<T>,
+    {
+        self.0.try_get()
     }
 
     /// Returns a mutable reference to the value with corresponding type.
@@ -179,23 +206,27 @@ impl<S> TyghtMap<S> {
         self.0.try_get_mut()
     }
 
-    /// Tries to return a reference to the value with corresponding type.
-    pub fn try_get<T>(&self) -> Option<&T>
-    where
-        S: MaybeContains<T>,
-    {
-        self.0.try_get()
-    }
-
     /// Removes a value with corresponding type.
     ///
     /// This consumes the map and returns an `(item, map)` pair.
     #[must_use]
-    pub fn remove<T>(self) -> (T, TyghtMap<<S as Remove<T>>::Output>)
+    pub fn remove<T>(self) -> (T, TyghtMap<S::RemoveOutput>)
     where
         S: Contains<T>,
     {
         let (item, map) = self.0.remove();
+        (item, TyghtMap(map))
+    }
+
+    /// Tries to remove a value with corresponding type.
+    ///
+    /// This consumes the map and returns an `(item, map)` pair.
+    #[must_use]
+    pub fn try_remove<T>(self) -> (Option<T>, TyghtMap<S::RemoveOutput>)
+    where
+        S: MaybeContains<T>,
+    {
+        let (item, map) = self.0.try_remove();
         (item, TyghtMap(map))
     }
 }

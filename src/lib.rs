@@ -85,13 +85,13 @@
 //!
 //! # Known Limitations
 //!
-//! Currently, the map can only store 32 items.
+//! Currently, the map can only store 32 items. This is done out of consideration for compile times.
 //! 
 //! The storage size can be lowered by the use of feature flags:
 //! 
-//! - `size-16` stores 16 items.
-//! - `size-32` stores 32 items (default).
-//! - Otherwise it stores 8 items (`--no-default-features`).
+//! - `size-16` is 16 items.
+//! - `size-32` is 32 items (default).
+//! - Otherwise 8 items (no default features).
 //!
 //! Future improvements to `rustc`s type system may remove the need for a limit all together.
 //!

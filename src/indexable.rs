@@ -1,6 +1,5 @@
 use core::{any::TypeId, convert::Infallible};
 
-/// An interface for converting static containers into [`TypeIds`].
 #[const_trait]
 trait IntoTypeIds {
     const LENGTH: usize;
@@ -190,6 +189,7 @@ macro_rules! indexable {
 
     ($($var:ident),*) => {
         indexable!(@step 0usize, ; $($var,)*);
+
         impl<$($var,)*> MaybeIndexable<{ usize::MAX }> for ($($var,)*)
         {
             type Item = Infallible;
@@ -224,5 +224,5 @@ macro_rules! indexable {
     }
 }
 
-// `Indexable` is implemented on tuples.
+// `Indexable` and `MaybeIndexable` is implemented on tuples.
 crate::macros::impl_all!(indexable);

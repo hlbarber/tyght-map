@@ -267,4 +267,54 @@ mod tests {
         Contains<i32>,
         Contains<u8>
     );
+
+    #[rustfmt::skip]
+    #[allow(dead_code)]
+    #[cfg(not(feature = "size-16"))]
+    mod tuples {
+        pub type Large = (
+            (), (), (), (), (), (), (), (),
+        );
+        pub type TooLarge = (
+            (), (), (), (), (), (), (), (),
+            ()
+        );
+    }
+
+    #[rustfmt::skip]
+    #[allow(dead_code)]
+    #[cfg(all(feature = "size-16", not(feature = "size-32")))]
+    mod tuples {
+        pub type Large = (
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+        );
+        pub type TooLarge = (
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            ()
+        );
+    }
+
+    #[rustfmt::skip]
+    #[allow(dead_code)]
+    #[cfg(feature = "size-32")]
+    mod tuples {
+        pub type Large = (
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+        );
+        pub type TooLarge = (
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            (), (), (), (), (), (), (), (),
+            ()
+        );
+    }
+
+    static_assertions::assert_impl_all!(tuples::Large: MaybeContains<()>,);
+    static_assertions::assert_not_impl_all!(tuples::TooLarge: MaybeContains<()>,);
 }

@@ -77,7 +77,7 @@ pub trait Map<T> {
 }
 
 /// Maps `T` to `T`.
-#[derive(Debug)]
+#[allow(missing_debug_implementations)]
 pub struct IdentityMap;
 
 impl<T> Map<T> for IdentityMap {
@@ -97,7 +97,7 @@ impl<T> Map<T> for IdentityMap {
 }
 
 /// Maps `!` to `T`.
-#[derive(Debug)]
+#[allow(missing_debug_implementations)]
 pub struct InfallibleMap;
 
 impl<T> Map<T> for InfallibleMap {

@@ -15,9 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
-      - uses: dtolnay/install@master
-        with:
-          crate: cargo-hack
+      - uses: taiki-e/install-action@cargo-hack
       - run: cargo hack check --each-feature
       - run: cargo hack test --each-feature
       - run: cargo hack clippy --each-feature
@@ -34,8 +32,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
-      - uses: dtolnay/install@master
-        with:
-          crate: cargo-hack  
+      - uses: taiki-e/install-action@cargo-hack
       - run: cargo hack run --example basic --each-feature
       - run: cargo hack miri run --example basic --each-feature

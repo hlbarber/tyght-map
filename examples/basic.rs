@@ -29,7 +29,7 @@ fn main() {
     // Inserting twice replaces the current value
     let (item, map) = map.try_insert(5u32);
     assert_eq!(std::mem::size_of_val(&map), 12);
-    assert_eq!(Some(4u32), item);
+    assert_eq!(Some(3u32), item);
     assert_eq!(5u32, *map.get());
 
     // Insert a string and then print it using generic methods

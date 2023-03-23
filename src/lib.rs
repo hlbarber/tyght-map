@@ -86,9 +86,9 @@
 //!
 //! # Known Limitations
 //!
-//! Currently, the map can only store 32 items. This is done out of consideration for compile times.
+//! Currently, the map can only store a maximum of 32 items. This is done out of consideration for compile times.
 //!
-//! The storage size can be changed by the use of feature flags:
+//! The storage limit can be changed by the use of feature flags:
 //!
 //! - `size-16` is 16 items.
 //! - `size-32` is 32 items (default).

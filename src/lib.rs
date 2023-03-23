@@ -9,7 +9,7 @@
 #![no_std]
 
 //! The `tyght-map` crate provides a static type map implementation.
-//! 
+//!
 //! A type map is a map where the values are indexed by their types.
 //!
 //! The map, [`TyghtMap`], enjoys the following properties:
@@ -49,7 +49,7 @@
 //! ```
 //!
 //! # Traits
-//! 
+//!
 //! Placing constraints on the `S` of `TyghtMap<S>` acts as a constraint on the values it contains.
 //!
 //! There are three important marker traits:
@@ -86,9 +86,9 @@
 //! # Known Limitations
 //!
 //! Currently, the map can only store 32 items. This is done out of consideration for compile times.
-//! 
+//!
 //! The storage size can be changed by the use of feature flags:
-//! 
+//!
 //! - `size-16` is 16 items.
 //! - `size-32` is 32 items (default).
 //! - Otherwise 8 items (no default features).
@@ -119,17 +119,17 @@ use insert::{Insert, TryInsert};
 use remove::{Remove, TryRemove};
 
 /// A trait marking whether `T` is present.
-/// 
+///
 /// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
 
 /// A trait marking whether `T` is maybe present.
-/// 
+///
 /// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait MaybeContains<T>: TryInsert<T> + TryGet<T> + TryRemove<T> {}
 
 /// A trait marking whether `T` is absent.
-/// 
+///
 /// See [Traits](crate#traits) section of crate documentation for more information.
 pub trait Missing<T>: MaybeContains<T> + Insert<T> {}
 

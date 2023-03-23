@@ -15,12 +15,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy, miri
       - uses: taiki-e/install-action@cargo-hack
       - run: cargo hack check --each-feature
       - run: cargo hack test --each-feature
       - run: cargo hack clippy --each-feature
       - run: cargo hack miri test --each-feature
 
+  fmt:
+    name: Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt --check
+    
   examples:
     name: Examples
     runs-on: ubuntu-latest

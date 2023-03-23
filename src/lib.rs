@@ -23,6 +23,7 @@
 //!
 //! ```
 //! #![feature(generic_const_exprs)]
+//!
 //! # use tyght_map::*;
 //! // Insert some different integer types into the map and check the size
 //! let map = TyghtMap::new()

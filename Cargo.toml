@@ -8,7 +8,7 @@ description = "A static type map implementation."
 repository = "https://github.com/hlbarber/tyght-map/"
 
 [features]
-defaults = ["size-32"]
+default = ["size-32"]
 size-16 = []
 size-32 = ["size-16"]
 

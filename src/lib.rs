@@ -5,7 +5,8 @@
     const_type_id
 )]
 #![allow(incomplete_features)]
-#![deny(missing_debug_implementations, missing_docs, unsafe_code)]
+#![deny(missing_debug_implementations, missing_docs)]
+#![forbid(unsafe_code)]
 #![no_std]
 
 //! The `tyght-map` crate provides a static type map implementation.

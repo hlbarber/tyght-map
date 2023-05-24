@@ -1,8 +1,8 @@
 #![feature(
     generic_const_exprs,
-    const_trait_impl,
-    const_type_id,
-    associated_const_equality
+    core_intrinsics,
+    associated_const_equality,
+    const_type_id
 )]
 #![allow(incomplete_features)]
 #![deny(missing_debug_implementations, missing_docs, unsafe_code)]
@@ -60,7 +60,7 @@
 //!     - [`get`](TyghtMap::get)
 //!     - [`get_mut`](TyghtMap::get_mut)
 //!     - [`remove`](TyghtMap::remove)
-//! - [`MaybeContains<T>`](MaybeContains) is always([`*`](#known-limitations)) implemented on `S`
+//! - [`MaybeContains<T>`](MaybeContains) is always implemented on `S`
 //! allowing:
 //!     - [`try_insert`](TyghtMap::try_insert)
 //!     - [`try_get`](TyghtMap::try_get)
@@ -84,18 +84,6 @@
 //! }
 //! ```
 //!
-//! # Known Limitations
-//!
-//! Currently, the map can only store a maximum of 32 items. This is done out of consideration for compile times.
-//!
-//! The storage limit can be changed by the use of feature flags:
-//!
-//! - `size-16` is 16 items.
-//! - `size-32` is 32 items (default).
-//! - Otherwise 8 items (no default features).
-//!
-//! Future improvements to `rustc`s type system may remove the need for a limit all together.
-//!
 //! # Nightly
 //!
 //! In contrast to other attempts, this implementation does not rely on specialization. It does however rely on a
@@ -109,48 +97,40 @@
 //! These can be expected to be stabilized, in some form, before specialization.
 //!
 
-mod get;
-mod indexable;
-mod insert;
-mod macros;
-mod remove;
+mod contains;
+mod maybe_contains;
+mod missing;
 
-use get::{Get, TryGet};
-use insert::{Insert, TryInsert};
-use remove::{Remove, TryRemove};
+/// Represents the empty set.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Nil;
 
-/// A trait marking whether `T` is present.
-///
-/// See [Traits](crate#traits) section of crate documentation for more information.
-pub trait Contains<T>: MaybeContains<T> + Get<T> + Remove<T> {}
+/// Represents the union of `{ H }` and `T`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Cons<H, T> {
+    head: H,
+    tail: T,
+}
 
-/// A trait marking whether `T` is maybe present.
-///
-/// See [Traits](crate#traits) section of crate documentation for more information.
-pub trait MaybeContains<T>: TryInsert<T> + TryGet<T> + TryRemove<T> {}
-
-/// A trait marking whether `T` is absent.
-///
-/// See [Traits](crate#traits) section of crate documentation for more information.
-pub trait Missing<T>: MaybeContains<T> + Insert<T> {}
-
-impl<T, S> Contains<T> for S where S: MaybeContains<T> + Get<T> + Remove<T> {}
-impl<T, S> MaybeContains<T> for S where S: TryInsert<T> + TryGet<T> + TryRemove<T> {}
-impl<T, S> Missing<T> for S where S: MaybeContains<T> + Insert<T> {}
+pub use contains::Contains;
+pub use maybe_contains::MaybeContains;
+pub use missing::Missing;
 
 /// A static type map.
 ///
 /// See the [crate-level documentation](crate) for more information.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use]
 pub struct TyghtMap<S>(S);
 
-impl Default for TyghtMap<()> {
+impl Default for TyghtMap<Nil> {
     fn default() -> Self {
-        Self(())
+        Self(Nil)
     }
 }
 
-impl TyghtMap<()> {
+impl TyghtMap<Nil> {
     /// Constructs an empty map.
     pub fn new() -> Self {
         Self::default()
@@ -170,9 +150,8 @@ impl<S> TyghtMap<S> {
     /// Tries to insert a value. If a value, with the same type, already exists then replace
     /// and return it.
     ///
-    /// This consumes the map then returns an `(optional_item, map)` pair.
-    #[must_use]
-    pub fn try_insert<T>(self, item: T) -> (Option<T>, TyghtMap<S::InsertOutput>)
+    /// This consumes the map then returns an `(item, map)` pair, where `item` is the existing item in the map.
+    pub fn try_insert<T>(self, item: T) -> (Option<T>, TyghtMap<S::Inserted>)
     where
         S: MaybeContains<T>,
     {
@@ -183,8 +162,7 @@ impl<S> TyghtMap<S> {
     /// Inserts a value.
     ///
     /// This consumes then returns the map.
-    #[must_use]
-    pub fn insert<T>(self, item: T) -> TyghtMap<S::InsertOutput>
+    pub fn insert<T>(self, item: T) -> TyghtMap<S::Inserted>
     where
         S: Missing<T>,
     {
@@ -226,8 +204,7 @@ impl<S> TyghtMap<S> {
     /// Removes a value with a given type.
     ///
     /// This consumes the map and returns an `(item, map)` pair.
-    #[must_use]
-    pub fn remove<T>(self) -> (T, TyghtMap<S::RemoveOutput>)
+    pub fn remove<T>(self) -> (T, TyghtMap<S::Removed>)
     where
         S: Contains<T>,
     {
@@ -238,8 +215,7 @@ impl<S> TyghtMap<S> {
     /// Tries to remove a value with a given type.
     ///
     /// This consumes the map and returns an `(optional_item, map)` pair.
-    #[must_use]
-    pub fn try_remove<T>(self) -> (Option<T>, TyghtMap<S::RemoveOutput>)
+    pub fn try_remove<T>(self) -> (Option<T>, TyghtMap<S::Removed>)
     where
         S: MaybeContains<T>,
     {
@@ -250,72 +226,64 @@ impl<S> TyghtMap<S> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{missing::Missing, Nil};
+
     use super::*;
 
+    #[allow(unused)]
+    type Ty = Cons<u8, Cons<u16, Cons<u32, Nil>>>;
+
     static_assertions::assert_impl_all!(
-        (u32, f32, f64): Contains<u32>,
-        Contains<f32>,
-        Contains<f64>,
-        Missing<&'static str>,
-        Missing<i32>,
-        Missing<u8>
+        Ty:
+        MaybeContains<u8, CONTAINS = true>,
+        MaybeContains<u16, CONTAINS = true>,
+        MaybeContains<u32, CONTAINS = true>,
+        MaybeContains<u64, CONTAINS = false>,
+        MaybeContains<u128, CONTAINS = false>
+    );
+    static_assertions::assert_impl_all!(
+        Ty:
+        Contains<u8>,
+        Contains<u16>,
+        Contains<u32>,
+        Missing<u64>,
+        Missing<u128>
     );
     static_assertions::assert_not_impl_any!(
-        (u32, f32, f64): Missing<u32>,
-        Missing<f32>,
-        Missing<f64>,
-        Contains<&'static str>,
-        Contains<i32>,
-        Contains<u8>
+        Ty:
+        Missing<u8>,
+        Missing<u16>,
+        Missing<u32>,
+        Contains<u64>,
+        Contains<u128>
     );
 
-    #[rustfmt::skip]
-    #[allow(dead_code)]
-    #[cfg(not(feature = "size-16"))]
-    mod tuples {
-        pub type Large = (
-            (), (), (), (), (), (), (), (),
-        );
-        pub type TooLarge = (
-            (), (), (), (), (), (), (), (),
-            ()
-        );
+    #[test]
+    fn insert_remove() {
+        let map = TyghtMap::new().insert(1_u8).insert(2_u16).insert(3_u32);
+
+        let (item, map) = map.remove();
+        assert_eq!(1_u8, item);
+
+        let (item, map) = map.remove();
+        assert_eq!(2_u16, item);
+
+        let (item, map) = map.remove();
+        assert_eq!(3_u32, item);
+
+        assert_eq!(TyghtMap::new(), map);
     }
 
-    #[rustfmt::skip]
-    #[allow(dead_code)]
-    #[cfg(all(feature = "size-16", not(feature = "size-32")))]
-    mod tuples {
-        pub type Large = (
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-        );
-        pub type TooLarge = (
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            ()
-        );
-    }
+    #[test]
+    fn try_insert() {
+        let map = TyghtMap::new().insert(1_u8);
 
-    #[rustfmt::skip]
-    #[allow(dead_code)]
-    #[cfg(feature = "size-32")]
-    mod tuples {
-        pub type Large = (
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-        );
-        pub type TooLarge = (
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            (), (), (), (), (), (), (), (),
-            ()
-        );
-    }
+        let (item, map) = map.try_insert(2);
+        assert_eq!(Some(1_u8), item);
 
-    static_assertions::assert_impl_all!(tuples::Large: MaybeContains<()>,);
-    static_assertions::assert_not_impl_all!(tuples::TooLarge: MaybeContains<()>,);
+        let (item, map) = map.remove();
+        assert_eq!(2_u8, item);
+
+        assert_eq!(map, TyghtMap::new());
+    }
 }

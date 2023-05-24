@@ -3,7 +3,7 @@
 
 use tyght_map::*;
 
-fn insert_string<S>(map: TyghtMap<S>) -> TyghtMap<S::InsertOutput>
+fn insert_string<S>(map: TyghtMap<S>) -> TyghtMap<S::Inserted>
 where
     S: Missing<String>,
 {

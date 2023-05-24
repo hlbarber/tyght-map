@@ -11,6 +11,7 @@ keywords = ["no_std", "typemap"]
 categories = ["data-structures", "no-std"]
 
 [features]
+# TODO: Remove all these features in `0.2.0` - we no longer have a bounded number of items
 default = ["size-32"]
 size-16 = []
 size-32 = ["size-16"]

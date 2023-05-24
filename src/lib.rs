@@ -242,16 +242,14 @@ mod tests {
         MaybeContains<u128, CONTAINS = false>
     );
     static_assertions::assert_impl_all!(
-        Ty:
-        Contains<u8>,
+        Ty: Contains<u8>,
         Contains<u16>,
         Contains<u32>,
         Missing<u64>,
         Missing<u128>
     );
     static_assertions::assert_not_impl_any!(
-        Ty:
-        Missing<u8>,
+        Ty: Missing<u8>,
         Missing<u16>,
         Missing<u32>,
         Contains<u64>,

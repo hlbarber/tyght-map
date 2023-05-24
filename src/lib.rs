@@ -26,7 +26,7 @@
 //! #![feature(generic_const_exprs)]
 //!
 //! # use tyght_map::*;
-//! // Insert some different integer types into the map and check the size
+//! // Insert some different types into the map and check the size
 //! let map = TyghtMap::new()
 //!     .insert(3u32)
 //!     .insert(4i32)

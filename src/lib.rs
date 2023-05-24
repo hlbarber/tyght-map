@@ -285,4 +285,17 @@ mod tests {
 
         assert_eq!(map, TyghtMap::new());
     }
+
+    #[test]
+    fn try_remove() {
+        let map = TyghtMap::new().insert(1_u8);
+
+        let (item, map) = map.try_remove::<u8>();
+        assert_eq!(Some(1_u8), item);
+
+        let (item, map) = map.try_remove::<u8>();
+        assert_eq!(None, item);
+
+        assert_eq!(map, TyghtMap::new());
+    }
 }

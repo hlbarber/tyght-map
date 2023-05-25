@@ -18,8 +18,6 @@ pub trait LocalMaybeContains<Item, const HEAD: bool> {
 }
 
 impl<Item> LocalMaybeContains<Item, true> for Nil
-where
-    Item: 'static,
 {
     const CONTAINS: bool = false;
 
@@ -44,8 +42,6 @@ where
 }
 
 impl<Item, T> LocalMaybeContains<Item, true> for Cons<Item, T>
-where
-    Item: 'static,
 {
     const CONTAINS: bool = true;
 
@@ -73,7 +69,6 @@ where
 
 impl<Item, H, T> LocalMaybeContains<Item, false> for Cons<H, T>
 where
-    Item: 'static,
     T: MaybeContains<Item>,
 {
     const CONTAINS: bool = T::CONTAINS;

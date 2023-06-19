@@ -91,7 +91,7 @@
 //! variety of nightly features:
 //!
 //! - [`generic_const_exprs`](https://doc.rust-lang.org/beta/unstable-book/language-features/generic-const-exprs.html)
-//! - [`const_trait_impl`](https://doc.rust-lang.org/beta/unstable-book/language-features/const-trait-impl.html)
+//! - [`core_intrinsics`](https://doc.rust-lang.org/beta/unstable-book/library-features/core-intrinsics.html)
 //! - [`const_type_id`](https://doc.rust-lang.org/beta/unstable-book/library-features/const-type-id.html)
 //! - [`associated_const_equality`](https://doc.rust-lang.org/beta/unstable-book/language-features/associated-const-equality.html)
 //!

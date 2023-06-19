@@ -17,8 +17,7 @@ pub trait LocalMaybeContains<Item, const HEAD: bool> {
     fn try_insert(self, value: Item) -> (Option<Item>, Self::Inserted);
 }
 
-impl<Item> LocalMaybeContains<Item, true> for Nil
-{
+impl<Item> LocalMaybeContains<Item, true> for Nil {
     const CONTAINS: bool = false;
 
     type Inserted = Cons<Item, Nil>;
@@ -41,8 +40,7 @@ impl<Item> LocalMaybeContains<Item, true> for Nil
     }
 }
 
-impl<Item, T> LocalMaybeContains<Item, true> for Cons<Item, T>
-{
+impl<Item, T> LocalMaybeContains<Item, true> for Cons<Item, T> {
     const CONTAINS: bool = true;
 
     type Inserted = Self;

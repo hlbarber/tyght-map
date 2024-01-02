@@ -4,7 +4,7 @@
     associated_const_equality,
     const_type_id
 )]
-#![allow(incomplete_features)]
+#![allow(incomplete_features, internal_features)]
 #![deny(missing_debug_implementations, missing_docs)]
 #![forbid(unsafe_code)]
 #![no_std]
@@ -27,10 +27,7 @@
 //!
 //! # use tyght_map::*;
 //! // Insert some different types into the map and check the size
-//! let map = TyghtMap::new()
-//!     .insert(3u32)
-//!     .insert(4i32)
-//!     .insert(3f32);
+//! let map = TyghtMap::new().insert(3u32).insert(4i32).insert(3f32);
 //! assert_eq!(std::mem::size_of_val(&map), 12);
 //!
 //! // Retrieve the `u32` from the map
@@ -77,7 +74,7 @@
 //! fn print_string<S>(map: &TyghtMap<S>)
 //! where
 //!     S: Contains<String>,
-//!     S: Contains<u32>
+//!     S: Contains<u32>,
 //! {
 //!     let string: &String = map.get();
 //!     let int: &u32 = map.get();
@@ -96,7 +93,6 @@
 //! - [`associated_const_equality`](https://doc.rust-lang.org/beta/unstable-book/language-features/associated-const-equality.html)
 //!
 //! These can be expected to be stabilized, in some form, before specialization.
-//!
 
 mod contains;
 mod maybe_contains;

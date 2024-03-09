@@ -1,6 +1,6 @@
 [package]
 name = "tyght-map"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["harrybarber@protonmail.com"]
@@ -9,12 +9,6 @@ repository = "https://github.com/hlbarber/tyght-map/"
 documentation = "https://docs.rs/tyght-map/"
 keywords = ["no_std", "typemap"]
 categories = ["data-structures", "no-std"]
-
-[features]
-# TODO: Remove all these features in `0.2.0` - we no longer have a bounded number of items
-default = ["size-32"]
-size-16 = []
-size-32 = ["size-16"]
 
 [dev-dependencies]
 static_assertions = "1.1.0"

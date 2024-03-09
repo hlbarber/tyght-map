@@ -223,8 +223,6 @@ impl<S> TyghtMap<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{missing::Missing, Nil};
-
     use super::*;
 
     #[allow(unused)]
